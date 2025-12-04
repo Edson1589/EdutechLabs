@@ -423,8 +423,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                         ),
                         const SizedBox(height: 25),
-                        _buildPasswordStrengthIndicator(),
-                        const SizedBox(height: 20),
                         SizedBox(
                           width: double.infinity,
                           height: 56,
@@ -542,10 +540,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           minHeight: 6,
         ),
         const SizedBox(height: 4),
-        Text(
-          'Mínimo 8 caracteres, con mayúsculas, minúsculas, números y un carácter especial',
-          style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
-        ),
       ],
     );
   }
