@@ -19,6 +19,78 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   bool _passwordUpdated = false;
 
+  bool _showLengthError = false;
+  bool _showUppercaseError = false;
+  bool _showLowercaseError = false;
+  bool _showNumberError = false;
+  bool _showSpecialCharError = false;
+
+  void _validatePasswordOnType(String value) {
+    setState(() {
+      _showLengthError = value.isNotEmpty && value.length < 8;
+      _showUppercaseError =
+          value.isNotEmpty && !value.contains(RegExp(r'[A-Z]'));
+      _showLowercaseError =
+          value.isNotEmpty && !value.contains(RegExp(r'[a-z]'));
+      _showNumberError = value.isNotEmpty && !value.contains(RegExp(r'[0-9]'));
+      _showSpecialCharError = value.isNotEmpty &&
+          !value.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>]'));
+    });
+  }
+
+  Widget _buildRequirementError(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4.0, bottom: 2.0),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, size: 14, color: Colors.red.shade600),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red.shade600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPasswordRequirements() {
+    final hasText = _passwordController.text.isNotEmpty;
+    if (!hasText) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Requisitos de contraseña:',
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        if (_showLengthError)
+          _buildRequirementError('Debe tener al menos 8 caracteres'),
+        if (_showUppercaseError)
+          _buildRequirementError('Debe tener al menos una mayúscula (A-Z)'),
+        if (_showLowercaseError)
+          _buildRequirementError('Debe tener al menos una minúscula (a-z)'),
+        if (_showNumberError)
+          _buildRequirementError('Debe tener al menos un número (0-9)'),
+        if (_showSpecialCharError)
+          _buildRequirementError(
+            'Debe tener al menos un carácter especial (!@#\$%^&*)',
+          ),
+      ],
+    );
+  }
+
   Future<void> _updatePassword() async {
     if (_passwordUpdated) return;
 
@@ -264,7 +336,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                           child: TextFormField(
                             controller: _passwordController,
-                            onChanged: (_) => setState(() {}),
+                            onChanged: _validatePasswordOnType,
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -299,6 +371,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                             validator: _validatePassword,
                           ),
                         ),
+                        const SizedBox(height: 8),
+                        _buildPasswordRequirements(),
+                        const SizedBox(height: 8),
+                        _buildPasswordStrengthIndicator(),
                         const SizedBox(height: 20),
                         Container(
                           decoration: BoxDecoration(
@@ -393,7 +469,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         const SizedBox(height: 20),
                         TextButton(
-                          onPressed: () => context.pop(),
+                          onPressed: () => context.go('/login'),
                           child: const Text(
                             'Cancelar',
                             style: TextStyle(
