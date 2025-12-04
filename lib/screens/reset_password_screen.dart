@@ -16,9 +16,12 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+
   bool _passwordUpdated = false;
 
   Future<void> _updatePassword() async {
+    if (_passwordUpdated) return;
+
     if (!_formKey.currentState!.validate()) return;
 
     if (_passwordController.text != _confirmPasswordController.text) {
@@ -35,21 +38,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
     try {
       final supabase = Supabase.instance.client;
-
       await supabase.auth.updateUser(
         UserAttributes(password: _passwordController.text.trim()),
       );
+      await supabase.auth.signOut();
+
+      if (!mounted) return;
 
       setState(() => _passwordUpdated = true);
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Contraseña actualizada exitosamente'),
-            backgroundColor: Colors.green,
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Contraseña actualizada exitosamente. '
+            'Ahora puedes iniciar sesión con tu nueva contraseña.',
           ),
-        );
-      }
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -60,7 +66,9 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         );
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -206,7 +214,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          'Tu contraseña ha sido actualizada exitosamente. Ahora puedes iniciar sesión con tu nueva contraseña.',
+                          'Tu contraseña ha sido actualizada exitosamente. '
+                          'Ahora puedes iniciar sesión con tu nueva contraseña.',
                           style: TextStyle(color: Colors.white70),
                           textAlign: TextAlign.center,
                         ),
@@ -398,9 +407,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       } else if (password.length < 8) {
         strengthText = 'Media';
         strengthColor = Colors.orange;
-      } else if (RegExp(
-        r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)',
-      ).hasMatch(password)) {
+      } else if (RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)')
+          .hasMatch(password)) {
         strengthText = 'Fuerte';
         strengthColor = Colors.green;
       } else {
