@@ -118,6 +118,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  Widget _buildPasswordStrengthIndicator() {
+    final password = _passwordController.text;
+    if (password.isEmpty) return const SizedBox.shrink();
+
+    int score = 0;
+    if (password.length >= 8) score++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
+    if (RegExp(r'[a-z]').hasMatch(password)) score++;
+    if (RegExp(r'[0-9]').hasMatch(password)) score++;
+    if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) score++;
+
+    final double value = score / 5.0;
+
+    String label;
+    Color color;
+
+    if (score <= 1) {
+      label = 'Muy débil';
+      color = Colors.red;
+    } else if (score == 2) {
+      label = 'Débil';
+      color = Colors.orange;
+    } else if (score == 3) {
+      label = 'Media';
+      color = Colors.amber;
+    } else if (score == 4) {
+      label = 'Fuerte';
+      color = Colors.lightGreen;
+    } else {
+      label = 'Muy fuerte';
+      color = Colors.green;
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Seguridad de la contraseña: $label',
+          style: TextStyle(
+            color: color,
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(height: 6),
+        LinearProgressIndicator(
+          value: value,
+          backgroundColor: Colors.grey.shade300,
+          valueColor: AlwaysStoppedAnimation<Color>(color),
+          minHeight: 6,
+        ),
+      ],
+    );
+  }
+
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -204,8 +259,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 textInputAction: TextInputAction.next,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Por favor ingresa tu nombre completo';
+                  }
+                  final trimmed = value.trim();
+                  if (trimmed.length < 3) {
+                    return 'El nombre es demasiado corto';
+                  }
+                  if (!trimmed.contains(' ')) {
+                    return 'Ingresa al menos nombre y apellido';
                   }
                   return null;
                 },
@@ -221,10 +283,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 keyboardType: TextInputType.emailAddress,
                 textInputAction: TextInputAction.next,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
+                  if (value == null || value.trim().isEmpty) {
                     return 'Por favor ingresa tu correo';
                   }
-                  if (!value.contains('@')) {
+                  final email = value.trim();
+                  final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
+                  if (!regex.hasMatch(email)) {
                     return 'Ingresa un correo válido';
                   }
                   return null;
@@ -253,6 +317,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     : (value) {
                         setState(() => _selectedRole = value!);
                       },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Selecciona un rol';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -278,6 +348,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 8),
               _buildPasswordRequirements(),
+              const SizedBox(height: 8),
+              _buildPasswordStrengthIndicator(),
               const SizedBox(height: 16),
               TextFormField(
                 controller: _confirmPasswordController,

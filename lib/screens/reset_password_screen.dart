@@ -76,9 +76,27 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     if (value == null || value.isEmpty) {
       return 'Por favor ingresa tu nueva contraseña';
     }
-    if (value.length < 6) {
-      return 'La contraseña debe tener al menos 6 caracteres';
+
+    if (value.length < 8) {
+      return 'La contraseña debe tener al menos 8 caracteres';
     }
+
+    if (!RegExp(r'[A-Z]').hasMatch(value)) {
+      return 'Debe contener al menos una letra mayúscula';
+    }
+
+    if (!RegExp(r'[a-z]').hasMatch(value)) {
+      return 'Debe contener al menos una letra minúscula';
+    }
+
+    if (!RegExp(r'[0-9]').hasMatch(value)) {
+      return 'Debe contener al menos un número';
+    }
+
+    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
+      return 'Debe contener al menos un carácter especial (!@#\$%^&* etc.)';
+    }
+
     return null;
   }
 
@@ -246,6 +264,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                           ),
                           child: TextFormField(
                             controller: _passwordController,
+                            onChanged: (_) => setState(() {}),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 16,
@@ -397,31 +416,42 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   Widget _buildPasswordStrengthIndicator() {
     final password = _passwordController.text;
-    String strengthText = 'Seguridad de la contraseña';
-    Color strengthColor = Colors.grey;
+    if (password.isEmpty) return const SizedBox.shrink();
 
-    if (password.isNotEmpty) {
-      if (password.length < 6) {
-        strengthText = 'Débil';
-        strengthColor = Colors.red;
-      } else if (password.length < 8) {
-        strengthText = 'Media';
-        strengthColor = Colors.orange;
-      } else if (RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)')
-          .hasMatch(password)) {
-        strengthText = 'Fuerte';
-        strengthColor = Colors.green;
-      } else {
-        strengthText = 'Media';
-        strengthColor = Colors.orange;
-      }
+    int score = 0;
+    if (password.length >= 8) score++;
+    if (RegExp(r'[A-Z]').hasMatch(password)) score++;
+    if (RegExp(r'[a-z]').hasMatch(password)) score++;
+    if (RegExp(r'[0-9]').hasMatch(password)) score++;
+    if (RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(password)) score++;
+
+    final double value = score / 5.0;
+
+    String strengthText;
+    Color strengthColor;
+
+    if (score <= 1) {
+      strengthText = 'Muy débil';
+      strengthColor = Colors.red;
+    } else if (score == 2) {
+      strengthText = 'Débil';
+      strengthColor = Colors.orange;
+    } else if (score == 3) {
+      strengthText = 'Media';
+      strengthColor = Colors.amber;
+    } else if (score == 4) {
+      strengthText = 'Fuerte';
+      strengthColor = Colors.lightGreen;
+    } else {
+      strengthText = 'Muy fuerte';
+      strengthColor = Colors.green;
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          strengthText,
+          'Seguridad de la contraseña: $strengthText',
           style: TextStyle(
             color: strengthColor,
             fontSize: 14,
@@ -430,21 +460,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
         ),
         const SizedBox(height: 8),
         LinearProgressIndicator(
-          value: password.isEmpty
-              ? 0
-              : password.length < 6
-                  ? 0.33
-                  : password.length < 8
-                      ? 0.66
-                      : 1.0,
+          value: value,
           backgroundColor: Colors.grey.shade800,
           valueColor: AlwaysStoppedAnimation<Color>(strengthColor),
           minHeight: 6,
-          borderRadius: BorderRadius.circular(3),
         ),
         const SizedBox(height: 4),
         Text(
-          'Mínimo 6 caracteres, recomendado 8 con mayúsculas, minúsculas y números',
+          'Mínimo 8 caracteres, con mayúsculas, minúsculas, números y un carácter especial',
           style: TextStyle(color: Colors.grey.shade500, fontSize: 12),
         ),
       ],
